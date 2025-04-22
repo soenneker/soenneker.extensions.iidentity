@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using Soenneker.Extensions.Enumerable;
+using Soenneker.Utils.Json;
 
 namespace Soenneker.Extensions.IIdentity;
 
@@ -16,7 +18,33 @@ public static class IIdentityExtension
     /// </summary>
     public static void AddRolesFromJobTitle(this System.Security.Principal.IIdentity? identity)
     {
-        AddRolesFromClaim(identity, "jobTitle");
+        if (identity is not ClaimsIdentity claimsIdentity)
+            return;
+
+        string? value = claimsIdentity.FindFirst("jobTitle")?.Value;
+
+        if (value.IsNullOrWhiteSpace())
+            return;
+
+        ReadOnlySpan<char> span = value.AsSpan();
+        var claims = new List<Claim>();
+        var start = 0;
+
+        for (var i = 0; i <= span.Length; i++)
+        {
+            if (i == span.Length || span[i] == ',')
+            {
+                ReadOnlySpan<char> slice = span.Slice(start, i - start).Trim();
+
+                if (!slice.IsEmpty)
+                    claims.Add(new Claim(ClaimTypes.Role, slice.ToString()));
+
+                start = i + 1;
+            }
+        }
+
+        if (claims.Count > 0)
+            claimsIdentity.AddClaims(claims);
     }
 
     /// <summary>
@@ -24,43 +52,35 @@ public static class IIdentityExtension
     /// </summary>
     public static void AddRolesFromRoles(this System.Security.Principal.IIdentity? identity)
     {
-        AddRolesFromClaim(identity, "roles");
-    }
-
-    /// <summary>
-    /// Adds role claims by parsing the comma-separated generic claim into ClaimTypes.Role claims.
-    /// </summary>
-    public static void AddRolesFromClaim(System.Security.Principal.IIdentity? identity, string claimType)
-    {
         if (identity is not ClaimsIdentity claimsIdentity)
             return;
 
-        string? value = claimsIdentity.FindFirst(claimType)?.Value;
+        string? value = claimsIdentity.FindFirst("roles")?.Value;
 
         if (value.IsNullOrWhiteSpace())
             return;
 
-        List<Claim>? claims = null;
+        var roles = JsonUtil.Deserialize<List<string>>(value);
 
-        var start = 0;
+        if (roles.IsNullOrEmpty())
+            return;
 
-        for (var i = 0; i <= value.Length; i++)
+        List<Claim> claims = new(roles.Count);
+
+        for (var i = 0; i < roles.Count; i++)
         {
-            if (i == value.Length || value[i] == ',')
+            string role = roles[i];
+
+            if (role.HasContent())
             {
-                ReadOnlySpan<char> span = value.AsSpan(start, i - start).Trim();
+                ReadOnlySpan<char> span = role.AsSpan().Trim();
 
                 if (!span.IsEmpty)
-                {
-                    claims ??= new List<Claim>();
                     claims.Add(new Claim(ClaimTypes.Role, span.ToString()));
-                }
-
-                start = i + 1;
             }
         }
 
-        if (claims is not null)
+        if (claims.Count > 0)
             claimsIdentity.AddClaims(claims);
     }
 }
