@@ -1,4 +1,4 @@
-﻿using Soenneker.Extensions.String;
+using Soenneker.Extensions.String;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -27,7 +27,14 @@ public static class IIdentityExtension
             return;
 
         ReadOnlySpan<char> span = value.AsSpan();
-        var claims = new List<Claim>();
+        // Estimate capacity: count commas + 1 for segments
+        int estimatedCapacity = 1;
+        for (var i = 0; i < span.Length; i++)
+        {
+            if (span[i] == ',')
+                estimatedCapacity++;
+        }
+        var claims = new List<Claim>(estimatedCapacity);
         var start = 0;
 
         for (var i = 0; i <= span.Length; i++)
