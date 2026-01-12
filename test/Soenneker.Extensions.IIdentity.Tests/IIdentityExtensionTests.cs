@@ -4,9 +4,9 @@ using Xunit;
 namespace Soenneker.Extensions.IIdentity.Tests;
 
 [Collection("Collection")]
-public class IIdentityExtensionTests : FixturedUnitTest
+public class IdentityExtensionTests : FixturedUnitTest
 {
-    public IIdentityExtensionTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public IdentityExtensionTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
     {
     }
 
