@@ -24,7 +24,7 @@ public static class IIdentityExtension
         string? value = ci.FindFirst(_jobTitleClaimType)
                           ?.Value;
 
-        if (string.IsNullOrWhiteSpace(value))
+        if (value.IsNullOrWhiteSpace())
             return;
 
         ReadOnlySpan<char> span = value.AsSpan();
