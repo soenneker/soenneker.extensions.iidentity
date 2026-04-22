@@ -9,7 +9,7 @@ namespace Soenneker.Extensions.IIdentity.Tests;
 
 public sealed class Host : UnitTestHost
 {
-    public override Task InitializeAsync()
+    public override global::System.Threading.Tasks.Task InitializeAsync()
     {
         SetupIoC(Services);
 
@@ -27,3 +27,4 @@ public sealed class Host : UnitTestHost
         services.AddSingleton(config);
     }
 }
+
