@@ -1,16 +1,15 @@
-﻿using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Extensions.IIdentity.Tests;
 
-[Collection("Collection")]
-public class IdentityExtensionTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class IdentityExtensionTests : HostedUnitTest
 {
-    public IdentityExtensionTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public IdentityExtensionTests(Host host) : base(host)
     {
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
