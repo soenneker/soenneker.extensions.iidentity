@@ -7,6 +7,9 @@ using Soenneker.Utils.Json;
 namespace Soenneker.Extensions.IIdentity;
 
 // ReSharper disable once InconsistentNaming
+/// <summary>
+/// Represents the i identity extension.
+/// </summary>
 public static class IIdentityExtension
 {
     private const string _jobTitleClaimType = "jobTitle";
