@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Security.Claims;
 using Soenneker.Extensions.String;
 using Soenneker.Utils.Json;
@@ -32,20 +31,6 @@ public static class IIdentityExtension
 
         ReadOnlySpan<char> span = value.AsSpan();
 
-        // Count potential segments (commas + 1) so we can rent once.
-        var segments = 1;
-
-        for (var i = 0; i < span.Length; i++)
-        {
-            if (span[i] == ',')
-                segments++;
-        }
-
-        // Early out for the common "no comma, but maybe whitespace" case:
-        // We'll still parse below, but this keeps the pooled rent size minimal.
-        Claim[] rented = ArrayPool<Claim>.Shared.Rent(segments);
-
-        var claimCount = 0;
         var start = 0;
 
         for (var i = 0; i <= span.Length; i++)
@@ -62,22 +47,12 @@ public static class IIdentityExtension
                 // Substring still allocates, but it's cheaper than Trim().ToString() when no trim needed.
                 string role = trimmed.Length == slice.Length ? value.Substring(start, slice.Length) : trimmed.ToString();
 
-                rented[claimCount++] = new Claim(ClaimTypes.Role, role);
+                ci.AddClaim(new Claim(ClaimTypes.Role, role));
             }
 
             start = i + 1;
         }
 
-        if (claimCount > 0)
-        {
-            // AddClaims enumerates; safe to return array after this call.
-            // We pass only the used portion via ArraySegment to avoid enumerating null tail.
-            ci.AddClaims(new ArraySegment<Claim>(rented, 0, claimCount));
-        }
-
-        // Clear used slots so Claim references aren't kept alive by the pool.
-        Array.Clear(rented, 0, claimCount);
-        ArrayPool<Claim>.Shared.Return(rented);
     }
 
     /// <summary>
@@ -99,10 +74,6 @@ public static class IIdentityExtension
         if (roles is null || roles.Length == 0)
             return;
 
-        Claim[] rented = ArrayPool<Claim>.Shared.Rent(roles.Length);
-
-        var claimCount = 0;
-
         for (var i = 0; i < roles.Length; i++)
         {
             string? roleStr = roles[i];
@@ -119,13 +90,7 @@ public static class IIdentityExtension
             // If no trim occurred, reuse original string (zero allocation).
             string role = trimmed.Length == roleSpan.Length ? roleStr : trimmed.ToString();
 
-            rented[claimCount++] = new Claim(ClaimTypes.Role, role);
+            ci.AddClaim(new Claim(ClaimTypes.Role, role));
         }
-
-        if (claimCount > 0)
-            ci.AddClaims(new ArraySegment<Claim>(rented, 0, claimCount));
-
-        Array.Clear(rented, 0, claimCount);
-        ArrayPool<Claim>.Shared.Return(rented);
     }
 }
