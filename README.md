@@ -4,7 +4,7 @@
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.extensions.iidentity/codeql.yml?label=CodeQL&style=for-the-badge)](https://github.com/soenneker/soenneker.extensions.iidentity/actions/workflows/codeql.yml)
 
 # ![](https://user-images.githubusercontent.com/4441470/224455560-91ed3ee7-f510-4041-a8d2-3fc093025112.png) Soenneker.Extensions.IIdentity
-A collection of helpful IIdentity (authentication, authorization) extension methods.
+Promotes selected identity claims into standard .NET role claims for authorization.
 
 ## Installation
 
@@ -12,16 +12,35 @@ A collection of helpful IIdentity (authentication, authorization) extension meth
 dotnet add package Soenneker.Extensions.IIdentity
 ```
 
-## Quick start
+## Promote a comma-separated job title claim
 
 ```csharp
 using Soenneker.Extensions.IIdentity;
 
-// Given an existing System.Security.Principal.IIdentity? named identity:
 identity.AddRolesFromJobTitle();
 ```
 
-## Common operations
+Given a `jobTitle` claim such as `"Administrator, Billing"`, `AddRolesFromJobTitle()` adds `ClaimTypes.Role` claims for `Administrator` and `Billing`. Values are split on commas, trimmed, and blank entries are skipped.
 
-- `AddRolesFromJobTitle()` - Adds role claims by parsing the comma-separated "jobTitle" claim into ClaimTypes.Role claims. Highest-perf path: one scan to count segments, rent Claim[] from ArrayPool, add in one shot.
-- `AddRolesFromRoles()` - Adds role claims by parsing the JSON array in the "roles" claim into ClaimTypes.Role claims. Uses pooled Claim[] and avoids creating List<Claim>.
+## Promote a JSON roles claim
+
+```csharp
+identity.AddRolesFromRoles();
+```
+
+`AddRolesFromRoles()` expects the first `roles` claim to contain a JSON string array:
+
+```json
+["Administrator", "Billing"]
+```
+
+Blank elements are skipped. Malformed JSON and an empty array add no roles.
+
+Both methods:
+
+- Modify the existing identity only when it is a `ClaimsIdentity`; `null` and other `IIdentity` implementations are unchanged.
+- Read only the first source claim of the relevant type.
+- Preserve the source claim and add standard role claims alongside it.
+- Do not add an exact duplicate of an existing role claim, making repeated calls idempotent.
+
+These methods turn claim text directly into authorization roles. Call them only after the identity and source claims have been authenticated and validated against a trusted issuer. They do not verify token signatures, issuers, audiences, or which role names your application permits.

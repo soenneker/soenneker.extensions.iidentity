@@ -1,5 +1,6 @@
 using System;
 using System.Security.Claims;
+using System.Text.Json;
 using Soenneker.Extensions.String;
 using Soenneker.Utils.Json;
 
@@ -16,7 +17,7 @@ public static class IIdentityExtension
 
     /// <summary>
     /// Adds role claims by parsing the comma-separated "jobTitle" claim into ClaimTypes.Role claims.
-    /// Highest-perf path: one scan to count segments, rent Claim[] from ArrayPool, add in one shot.
+    /// Existing role claims with the same exact value are not duplicated.
     /// </summary>
     public static void AddRolesFromJobTitle(this System.Security.Principal.IIdentity? identity)
     {
@@ -47,17 +48,16 @@ public static class IIdentityExtension
                 // Substring still allocates, but it's cheaper than Trim().ToString() when no trim needed.
                 string role = trimmed.Length == slice.Length ? value.Substring(start, slice.Length) : trimmed.ToString();
 
-                ci.AddClaim(new Claim(ClaimTypes.Role, role));
+                AddRoleIfMissing(ci, role);
             }
 
             start = i + 1;
         }
-
     }
 
     /// <summary>
     /// Adds role claims by parsing the JSON array in the "roles" claim into ClaimTypes.Role claims.
-    /// Uses pooled Claim[] and avoids creating List&lt;Claim&gt;.
+    /// Malformed JSON is ignored and existing role claims with the same exact value are not duplicated.
     /// </summary>
     public static void AddRolesFromRoles(this System.Security.Principal.IIdentity? identity)
     {
@@ -70,7 +70,17 @@ public static class IIdentityExtension
             return;
 
         // Deserialize to array (cheaper than List<T>). Still allocates the strings (unavoidable).
-        string[]? roles = JsonUtil.Deserialize<string[]>(value);
+        string[]? roles;
+
+        try
+        {
+            roles = JsonUtil.Deserialize<string[]>(value);
+        }
+        catch (JsonException)
+        {
+            return;
+        }
+
         if (roles is null || roles.Length == 0)
             return;
 
@@ -90,7 +100,13 @@ public static class IIdentityExtension
             // If no trim occurred, reuse original string (zero allocation).
             string role = trimmed.Length == roleSpan.Length ? roleStr : trimmed.ToString();
 
-            ci.AddClaim(new Claim(ClaimTypes.Role, role));
+            AddRoleIfMissing(ci, role);
         }
+    }
+
+    private static void AddRoleIfMissing(ClaimsIdentity identity, string role)
+    {
+        if (!identity.HasClaim(ClaimTypes.Role, role))
+            identity.AddClaim(new Claim(ClaimTypes.Role, role));
     }
 }
