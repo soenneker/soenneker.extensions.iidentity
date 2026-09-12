@@ -44,7 +44,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Extensions.Enumerable" Version="4.0.661" />
+        <PackageReference Include="Soenneker.Extensions.Enumerable" Version="4.0.662" />
         <PackageReference Include="Soenneker.Utils.Json" Version="4.0.2691" />
     </ItemGroup>
 </Project>
