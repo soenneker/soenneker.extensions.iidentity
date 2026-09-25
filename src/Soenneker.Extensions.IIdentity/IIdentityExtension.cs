@@ -74,7 +74,7 @@ public static class IIdentityExtension
 
         try
         {
-            roles = JsonUtil.Deserialize<string[]>(value);
+            roles = JsonUtil.Deserialize<string[]>(value, LibraryJsonContext.Get<string[]>());
         }
         catch (JsonException)
         {
