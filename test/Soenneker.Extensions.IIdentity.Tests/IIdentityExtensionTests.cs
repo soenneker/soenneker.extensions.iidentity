@@ -12,7 +12,7 @@ public class IdentityExtensionTests : HostedUnitTest
     }
 
     [Test]
-    public async System.Threading.Tasks.Task Role_promotion_is_idempotent()
+    public async System.Threading.Tasks.ValueTask Role_promotion_is_idempotent()
     {
         var identity = new ClaimsIdentity([new Claim("jobTitle", "Administrator, Billing")]);
 
@@ -23,7 +23,7 @@ public class IdentityExtensionTests : HostedUnitTest
     }
 
     [Test]
-    public async System.Threading.Tasks.Task Malformed_roles_json_is_ignored()
+    public async System.Threading.Tasks.ValueTask Malformed_roles_json_is_ignored()
     {
         var identity = new ClaimsIdentity([new Claim("roles", "not-json")]);
 
