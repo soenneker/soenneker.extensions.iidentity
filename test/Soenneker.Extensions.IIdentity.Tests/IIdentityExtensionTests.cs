@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Security.Claims;
 using Soenneker.Tests.HostedUnit;
+using System.Threading;
 
 namespace Soenneker.Extensions.IIdentity.Tests;
 
@@ -12,7 +13,7 @@ public class IdentityExtensionTests : HostedUnitTest
     }
 
     [Test]
-    public async System.Threading.Tasks.ValueTask Role_promotion_is_idempotent()
+    public async System.Threading.Tasks.ValueTask Role_promotion_is_idempotent(CancellationToken cancellationToken)
     {
         var identity = new ClaimsIdentity([new Claim("jobTitle", "Administrator, Billing")]);
 
@@ -23,7 +24,7 @@ public class IdentityExtensionTests : HostedUnitTest
     }
 
     [Test]
-    public async System.Threading.Tasks.ValueTask Malformed_roles_json_is_ignored()
+    public async System.Threading.Tasks.ValueTask Malformed_roles_json_is_ignored(CancellationToken cancellationToken)
     {
         var identity = new ClaimsIdentity([new Claim("roles", "not-json")]);
 
